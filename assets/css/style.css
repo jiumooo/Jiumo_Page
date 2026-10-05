@@ -342,6 +342,23 @@ a:hover {
   gap: 3px;
 }
 
+.ghchart-refresh {
+  margin-left: 6px;
+  padding: 1px 7px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.ghchart-refresh:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
 .ghchart-loading,
 .ghchart-retry {
   font-size: 12px;
