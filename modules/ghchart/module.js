@@ -69,15 +69,6 @@ window.JiumoModules.ghchart = {
       wrap.innerHTML = '<div class="state-box" style="padding:12px 0;">请先在后台填写 GitHub 用户名</div>';
       return;
     }
-    fetchChart();
-
-    /* 自动刷新：按后台配置的间隔定时重拉（秒） */
-    var secs = parseInt(m.refresh, 10) || 0;
-    if (secs > 0) {
-      window.JiumoModules.ghchart.__timer = setInterval(function () {
-        window.JiumoModules.ghchart.render(el, m);
-      }, secs * 1000);
-    }
   }
 };
 
