@@ -17,78 +17,41 @@ window.JiumoModules.ghchart = {
     { key: 'style', label: '显示样式', type: 'select',
       options: [['classic', '经典绿'], ['dark', '深色'], ['coral', '珊瑚橙'], ['custom', '自定义色']] },
     { key: 'color', label: '自定义主色（选择「自定义色」时生效）', type: 'text' },
-    { key: 'rounded', label: '方块圆角', type: 'checkbox' },
-    { key: 'refresh', label: '自动刷新', type: 'select',
-      options: [['off', '不自动刷新'], ['300', '每5分钟'], ['900', '每15分钟'], ['1800', '每30分钟'], ['3600', '每1小时']] }
+    { key: 'rounded', label: '方块圆角', type: 'checkbox' }
   ],
   render: function (el, m) {
     el.innerHTML = '';
-    /* 清理上一次的定时器，避免重复渲染叠加 */
-    if (window.JiumoModules.ghchart.__timer) {
-      clearInterval(window.JiumoModules.ghchart.__timer);
-      window.JiumoModules.ghchart.__timer = null;
-    }
     var user = (m.username || (window.getConfig ? getConfig().owner : '') || '').trim();
     var wrap = document.createElement('div');
     wrap.className = 'ghchart-wrap';
     wrap.innerHTML = '<div class="ghchart-loading">正在加载贡献数据…</div>';
     el.appendChild(wrap);
 
-    /* 手动刷新：清掉旧的 wrap 重新拉取（保留模块配置） */
-    function refresh() {
-      wrap.innerHTML = '<div class="ghchart-loading">正在刷新…</div>';
-      fetchChart(function (ok, html) {
-        wrap.innerHTML = ok ? html : wrap.innerHTML;
-        bindRefresh();
-      });
-    }
-    function bindRefresh() {
-      var btn = wrap.querySelector('.ghchart-refresh');
-      if (btn) {
-        btn.addEventListener('click', function (ev) {
-          ev.preventDefault();
-          refresh();
+    /* 拉取并绘制；失败时显示重试 */
+    var api = 'https://github-contributions-api.jogruber.de/v4/' + encodeURIComponent(user);
+    fetch(api, { method: 'GET' }).then(function (res) {
+      if (!res.ok) {
+        throw new Error('HTTP ' + res.status);
+      }
+      return res.json();
+    }).then(function (data) {
+      var list = (data && data.contributions) || [];
+      if (!list.length) {
+        wrap.innerHTML = '<div class="state-box" style="padding:12px 0;">未获取到贡献数据</div>';
+        return;
+      }
+      wrap.innerHTML = drawChart(list, m);
+    }).catch(function () {
+      wrap.innerHTML =
+        '<div class="state-box" style="padding:12px 0;">贡献图加载失败' +
+        '<br><button class="ghchart-retry">重试</button></div>';
+      var retry = wrap.querySelector('.ghchart-retry');
+      if (retry) {
+        retry.addEventListener('click', function () {
+          window.JiumoModules.ghchart.render(el, m);
         });
       }
-    }
-
-    /* 拉取并绘制；失败时显示重试 */
-    function fetchChart(done) {
-      var api = 'https://github-contributions-api.jogruber.de/v4/' + encodeURIComponent(user);
-      fetch(api, { method: 'GET' }).then(function (res) {
-        if (!res.ok) {
-          throw new Error('HTTP ' + res.status);
-        }
-        return res.json();
-      }).then(function (data) {
-        var list = (data && data.contributions) || [];
-        if (!list.length) {
-          wrap.innerHTML = '<div class="state-box" style="padding:12px 0;">未获取到贡献数据</div>';
-          return;
-        }
-        wrap.innerHTML = drawChart(list, m);
-        done && done(true, wrap.innerHTML);
-      }).catch(function () {
-        wrap.innerHTML =
-          '<div class="state-box" style="padding:12px 0;">贡献图加载失败' +
-          '<br><button class="ghchart-retry">重试</button></div>';
-        var retry = wrap.querySelector('.ghchart-retry');
-        if (retry) {
-          retry.addEventListener('click', function () {
-            window.JiumoModules.ghchart.render(el, m);
-          });
-        }
-      });
-    }
-    fetchChart();
-
-    /* 自动刷新：按后台配置的间隔定时重拉（秒） */
-    var secs = parseInt(m.refresh, 10) || 0;
-    if (secs > 0) {
-      window.JiumoModules.ghchart.__timer = setInterval(function () {
-        window.JiumoModules.ghchart.render(el, m);
-      }, secs * 1000);
-    }
+    });
     /* 模块标题行：标题在左、用户名在右（同一行，中间自适应留白） */
     var head = el.parentElement ? el.parentElement.querySelector('h3') : null;
     if (head) {
@@ -274,6 +237,5 @@ function drawChart(list, m) {
     '" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">' +
     rects + '</svg>' +
     '<div class="ghchart-foot"><span>' + label + ' · 共 ' + total +
-    ' 次贡献</span><span class="ghchart-legend">' + legend + '</span>' +
-    '<button class="ghchart-refresh" title="手动刷新贡献数据">↻</button></div>';
+    ' 次贡献</span><span class="ghchart-legend">' + legend + '</span></div>';
 }
