@@ -984,6 +984,19 @@
     d.widgets.mouseClickSize = Math.max(10, Math.min(40, parseInt(val('cfgWMouseClickSize'), 10) || 18));
     d.widgets.mouseClickTexts = (val('cfgWMouseClickTexts') || '富强 民主 文明 和谐 自由 平等 公正 法治 爱国 敬业 诚信 友善').trim();
     d.widgets.mouseClickColor = val('cfgWMouseClickColor') || '#0f766e';
+    d.widgets.contextMenu = checked('cfgWContextMenu');
+    d.widgets.contextMenuItems = {
+      backTop: checked('cfgWCMBackTop'),
+      darkToggle: checked('cfgWCMDark'),
+      copyLink: checked('cfgWCMCopy'),
+      fullscreen: checked('cfgWCMFullscreen'),
+      refresh: checked('cfgWCMRefresh'),
+      admin: checked('cfgWCMAdmin'),
+      particles: checked('cfgWCMParticles'),
+      mouseTrail: checked('cfgWCMMouseTrail'),
+      clickFx: checked('cfgWCMClickFx'),
+      typing: checked('cfgWCMTyping')
+    };
     d.widgets.festivalTheme = checked('cfgWFestival');
     d.widgets.festivalDecoCount = Math.max(0, Math.min(20, parseInt(val('cfgWFestivalDecoCount'), 10) || 8));
     d.widgets.festivalDecoOpacity = Math.max(0.1, Math.min(1, parseFloat(val('cfgWFestivalDecoOpacity')) || 0.9));
@@ -1052,6 +1065,18 @@
     setVal('cfgWMouseClickSize', w.mouseClickSize != null ? w.mouseClickSize : 18);
     setVal('cfgWMouseClickTexts', w.mouseClickTexts || '富强 民主 文明 和谐 自由 平等 公正 法治 爱国 敬业 诚信 友善');
     setVal('cfgWMouseClickColor', w.mouseClickColor || '#0f766e');
+    var cmi = w.contextMenuItems || {};
+    setVal('cfgWContextMenu', w.contextMenu !== false);
+    setVal('cfgWCMBackTop', cmi.backTop !== false);
+    setVal('cfgWCMDark', cmi.darkToggle !== false);
+    setVal('cfgWCMCopy', cmi.copyLink !== false);
+    setVal('cfgWCMFullscreen', cmi.fullscreen !== false);
+    setVal('cfgWCMRefresh', cmi.refresh !== false);
+    setVal('cfgWCMAdmin', cmi.admin !== false);
+    setVal('cfgWCMParticles', cmi.particles !== false);
+    setVal('cfgWCMMouseTrail', cmi.mouseTrail !== false);
+    setVal('cfgWCMClickFx', cmi.clickFx !== false);
+    setVal('cfgWCMTyping', cmi.typing !== false);
     setVal('cfgWFestival', w.festivalTheme !== false);
     setVal('cfgWFestivalDecoCount', w.festivalDecoCount != null ? w.festivalDecoCount : 8);
     setVal('cfgWFestivalDecoOpacity', w.festivalDecoOpacity != null ? w.festivalDecoOpacity : 0.9);
@@ -1142,6 +1167,12 @@
     'cfgWMouseClick': '动画管理', 'cfgWMouseClickMode': '动画管理',
     'cfgWMouseClickSize': '动画管理', 'cfgWMouseClickTexts': '动画管理',
     'cfgWMouseClickColor': '动画管理',
+    'cfgWContextMenu': '动画管理', 'cfgWCMBackTop': '动画管理',
+    'cfgWCMDark': '动画管理', 'cfgWCMCopy': '动画管理',
+    'cfgWCMFullscreen': '动画管理', 'cfgWCMRefresh': '动画管理',
+    'cfgWCMAdmin': '动画管理', 'cfgWCMParticles': '动画管理',
+    'cfgWCMMouseTrail': '动画管理', 'cfgWCMClickFx': '动画管理',
+    'cfgWCMTyping': '动画管理',
     'cfgWFestival': '动画管理',
     'cfgWFestivalDecoCount': '动画管理', 'cfgWFestivalDecoOpacity': '动画管理',
     'cfgWFestivalDecoContent': '动画管理'

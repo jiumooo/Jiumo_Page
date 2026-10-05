@@ -402,7 +402,9 @@
       stopTimer = setTimeout(function () { alive = false; }, 3000);
     }
 
-    window.addEventListener('mousemove', function (e) {
+    window.__fxHandlers = window.__fxHandlers || {};
+    /* 命名 handler 并暴露，供右键菜单即时开/关时移除监听 */
+    var trailHandler = function (e) {
       if (particles.length > MAX_PARTICLES) {
         return;
       }
@@ -423,7 +425,16 @@
       if (forever && particles.length > MAX_PARTICLES) {
         particles.splice(0, particles.length - MAX_PARTICLES);
       }
-    }, { passive: true });
+    };
+    window.addEventListener('mousemove', trailHandler, { passive: true });
+    window.__fxHandlers.mouseTrail = {
+      handler: trailHandler,
+      el: cv,
+      clear: function () {
+        cancelAnimationFrame(raf);
+        cv.remove();
+      }
+    };
 
     function tick() {
       if (!alive) {
@@ -518,15 +529,21 @@
 
     if (mode === 'click') {
       /* 点击动作：点击位置弹出文字，随机漂移上浮消散 */
-      document.addEventListener('click', function (e) {
+      var clickHandler = function (e) {
         spawn(e.clientX, e.clientY);
-      }, { passive: true });
+      };
+      document.addEventListener('click', clickHandler, { passive: true });
+      window.__fxHandlers.mouseClick = {
+        handler: clickHandler,
+        type: 'click',
+        clear: function () { layer.remove(); }
+      };
     } else {
       /* 拖尾：鼠标移动每 36px 留下一个文字，跟随移动轨迹 */
       var lastX = null;
       var lastY = null;
       var dist = 0;
-      document.addEventListener('mousemove', function (e) {
+      var moveHandler = function (e) {
         if (lastX != null) {
           dist += Math.hypot(e.clientX - lastX, e.clientY - lastY);
         }
@@ -536,8 +553,239 @@
           dist = 0;
           spawn(e.clientX, e.clientY);
         }
-      }, { passive: true });
+      };
+      document.addEventListener('mousemove', moveHandler, { passive: true });
+      window.__fxHandlers.mouseClick = {
+        handler: moveHandler,
+        type: 'mousemove',
+        clear: function () { layer.remove(); }
+      };
     }
+  }
+
+  /* ----------------------------------------------------------
+   * 自定义右键菜单：右键点击弹出站点菜单，接管浏览器原生右键
+   * 后台「动画管理 → 右键菜单」可开关、配置菜单项
+   * 管理后台页面不接管（编辑文章需要原生右键粘贴/审查）
+   * -------------------------------------------------------- */
+  function initContextMenu() {
+    if (document.querySelector('.admin-nav')) {
+      return;
+    }
+    var w = SITE_CFG.widgets || {};
+    if (w.contextMenu === false) {
+      return;
+    }
+    var items = w.contextMenuItems || {};
+    var menu = document.createElement('div');
+    menu.className = 'ctx-menu';
+    menu.style.display = 'none';
+    document.body.appendChild(menu);
+
+    function closeMenu() {
+      menu.style.display = 'none';
+      menu.innerHTML = '';
+    }
+
+    /* 模块开关状态文字（实时显示开/关） */
+    function fxLabel(key, label) {
+      var on = (SITE_CFG.widgets || {})[key] !== false;
+      return label + '：' + (on ? '开' : '关');
+    }
+
+    /* 切换模块开关并即时生效（粒子/轨迹/点击特效/打字机） */
+    function toggleFx(key) {
+      var cfg = SITE_CFG.widgets;
+      cfg[key] = !(cfg[key] !== false);
+      if (key === 'particles') {
+        var old = document.getElementById('particles-bg');
+        if (old) { old.remove(); }
+        if (cfg.particles) { initParticles(); }
+      } else if (key === 'mouseTrail') {
+        var t = window.__fxHandlers && window.__fxHandlers.mouseTrail;
+        if (t) { window.removeEventListener('mousemove', t.handler); t.clear(); delete window.__fxHandlers.mouseTrail; }
+        if (cfg.mouseTrail) { initMouseTrail(); }
+      } else if (key === 'mouseClick') {
+        var c = window.__fxHandlers && window.__fxHandlers.mouseClick;
+        if (c) { document.removeEventListener(c.type, c.handler); c.clear(); delete window.__fxHandlers.mouseClick; }
+        if (cfg.mouseClick) { initMouseClick(); }
+      } else if (key === 'typing') {
+        if (!cfg.typing) {
+          clearTypewriters();
+          /* 关闭后直接显示完整文字，避免区域空白 */
+          var s = SITE_CFG.site || {};
+          var p = SITE_CFG.profile || {};
+          var descEl = document.getElementById('siteDesc');
+          if (descEl && s.desc) { descEl.textContent = s.desc; }
+          var typedEl = document.getElementById('typedTarget');
+          if (typedEl) { typedEl.classList.add('hidden'); }
+          var introEl = document.getElementById('profileIntro');
+          if (introEl && p.intro) { introEl.textContent = p.intro; }
+        } else {
+          restartTypewriters();
+        }
+      }
+      renderMenu(menu.lastX, menu.lastY);
+    }
+
+    /* 重新排队打字机（与 applySiteConfig 中逻辑一致） */
+    function restartTypewriters() {
+      var s = SITE_CFG.site || {};
+      var p = SITE_CFG.profile || {};
+      var ww = SITE_CFG.widgets || {};
+      clearTypewriters();
+      var descEl = document.getElementById('siteDesc');
+      if (descEl && s.desc) {
+        if (s.descTyping !== false) {
+          queueTypewriter(descEl, s.desc, s.descTypingSpeed || 80);
+        } else {
+          descEl.textContent = s.desc;
+        }
+      }
+      var typedEl = document.getElementById('typedTarget');
+      var wtTexts = (ww.typing && ww.typingText && ww.typingText.length) ? ww.typingText.slice() : [];
+      if (typedEl) {
+        var introTxt = p.intro || '';
+        if (wtTexts.length && wtTexts[0] !== introTxt) {
+          typedEl.classList.remove('hidden');
+          queueTypewriter(typedEl, wtTexts[0], p.introTypingSpeed || 80);
+        } else {
+          typedEl.classList.add('hidden');
+        }
+      }
+      var introEl = document.getElementById('profileIntro');
+      if (introEl && p.intro) {
+        if (p.introTyping !== false) {
+          queueTypewriter(introEl, p.intro,
+            Math.max(10, Math.min(300, parseInt(p.introTypingSpeed, 10) || 80)));
+        } else {
+          introEl.textContent = p.intro;
+        }
+      }
+    }
+
+    /* 构建菜单（按后台开关渲染对应项） */
+    function renderMenu(x, y) {
+      menu.innerHTML = '';
+      function addItem(id, label, fn, keepOpen) {
+        if (items[id] === false) {
+          return null;
+        }
+        var el = document.createElement('div');
+        el.className = 'ctx-item';
+        el.textContent = label;
+        el.addEventListener('click', function (ev) {
+          ev.stopPropagation();
+          fn();
+          if (!keepOpen) {
+            closeMenu();
+          }
+        });
+        menu.appendChild(el);
+        return el;
+      }
+      function addSep() {
+        var s = document.createElement('div');
+        s.className = 'ctx-sep';
+        menu.appendChild(s);
+      }
+
+      addItem('backTop', '回到顶部', function () {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+      addItem('darkToggle', '切换深浅色', function () {
+        var cur = applyTheme();
+        var next = cur === 'dark' ? 'light' : 'dark';
+        try { localStorage.setItem(THEME_KEY, next); } catch (err) {}
+        applyTheme(next);
+      });
+      addItem('copyLink', '复制当前链接', function () {
+        var url = location.href;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(url);
+        } else {
+          var ta = document.createElement('textarea');
+          ta.value = url;
+          document.body.appendChild(ta);
+          ta.select();
+          try { document.execCommand('copy'); } catch (err) {}
+          ta.remove();
+        }
+      });
+
+      var fxShown = false;
+      var fxDefs = [
+        ['particles', fxLabel('particles', '粒子背景'), 'particles'],
+        ['mouseTrail', fxLabel('mouseTrail', '鼠标轨迹'), 'mouseTrail'],
+        ['clickFx', fxLabel('mouseClick', '点击特效'), 'mouseClick'],
+        ['typing', fxLabel('typing', '打字机'), 'typing']
+      ];
+      fxDefs.forEach(function (d) {
+        if (items[d[0]] !== false) {
+          if (!fxShown) {
+            addSep();
+            fxShown = true;
+          }
+          addItem(d[0], d[1], function () { toggleFx(d[2]); }, true);
+        }
+      });
+
+      var tailShown = false;
+      var tailDefs = [
+        ['fullscreen', '全屏浏览', function () {
+          if (document.fullscreenElement) {
+            document.exitFullscreen();
+          } else if (document.documentElement.requestFullscreen) {
+            document.documentElement.requestFullscreen();
+          }
+        }],
+        ['refresh', '刷新页面', function () { location.reload(); }],
+        ['admin', '打开管理后台', function () { location.href = 'admin/index.html'; }]
+      ];
+      tailDefs.forEach(function (d) {
+        if (items[d[0]] !== false) {
+          if (!tailShown) {
+            addSep();
+            tailShown = true;
+          }
+          addItem(d[0], d[1], d[2]);
+        }
+      });
+
+      /* 显示并做边缘自适应（防止超出视口） */
+      menu.style.display = 'block';
+      var mw = menu.offsetWidth;
+      var mh = menu.offsetHeight;
+      var vw = window.innerWidth;
+      var vh = window.innerHeight;
+      var left = Math.max(4, Math.min(x, vw - mw - 6));
+      var top = Math.max(4, Math.min(y, vh - mh - 6));
+      menu.style.left = left + 'px';
+      menu.style.top = top + 'px';
+    }
+
+    /* 右键打开菜单（阻止浏览器默认菜单） */
+    document.addEventListener('contextmenu', function (e) {
+      if (e.target && e.target.closest && e.target.closest('.ctx-menu')) {
+        closeMenu();
+        return;
+      }
+      e.preventDefault();
+      menu.lastX = e.clientX;
+      menu.lastY = e.clientY;
+      renderMenu(e.clientX, e.clientY);
+    });
+
+    /* 点击菜单外部关闭 */
+    document.addEventListener('click', function () {
+      closeMenu();
+    });
+    /* Esc 关闭 */
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') {
+        closeMenu();
+      }
+    });
   }
 
   /* ----------------------------------------------------------
@@ -644,6 +892,7 @@
     initProgressBar();
     initMouseTrail();
     initMouseClick();
+    initContextMenu();
     initFestivalTheme();
   };
 })();

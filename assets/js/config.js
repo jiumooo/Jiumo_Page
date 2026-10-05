@@ -95,6 +95,19 @@ window.DEFAULT_SITE_CONFIG = {
     mouseClickSize: 18,        /* 点击文字大小 10-40 */
     mouseClickTexts: '富强 民主 文明 和谐 自由 平等 公正 法治 爱国 敬业 诚信 友善',
     mouseClickColor: '#0f766e',/* 点击文字颜色 */
+    contextMenu: true,         /* 自定义右键菜单（前台页面接管浏览器右键） */
+    contextMenuItems: {        /* 右键菜单项开关 */
+      backTop: true,           /* 回到顶部 */
+      darkToggle: true,        /* 切换深浅色 */
+      copyLink: true,          /* 复制当前链接 */
+      fullscreen: true,        /* 全屏浏览 */
+      refresh: true,           /* 刷新页面 */
+      admin: true,             /* 打开管理后台 */
+      particles: true,         /* 一键开关粒子背景 */
+      mouseTrail: true,        /* 一键开关鼠标轨迹 */
+      clickFx: true,           /* 一键开关点击特效 */
+      typing: true             /* 一键开关打字机 */
+    },
     festivalTheme: true,       /* 节日主题自动切换 */
     festivalDecoCount: 8,      /* 节日装饰数量 0-20 */
     festivalDecoOpacity: 0.9,  /* 节日装饰透明度 0.1-1 */

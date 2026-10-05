@@ -2049,6 +2049,36 @@ body:has(.login-shell)::before {
   100% { opacity: 0; transform: translate(calc(-50% + var(--dx) * 0.4), calc(-100% + var(--dy))) scale(1); }
 }
 
+/* 自定义右键菜单（ui.js initContextMenu 动态创建） */
+.ctx-menu {
+  position: fixed;
+  z-index: 400;
+  min-width: 176px;
+  padding: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  font-size: 13px;
+}
+.ctx-item {
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text);
+  white-space: nowrap;
+  transition: background 0.12s, color 0.12s;
+}
+.ctx-item:hover {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
+}
+.ctx-sep {
+  height: 1px;
+  margin: 5px 8px;
+  background: var(--border);
+}
+
 /* 节日主题漂浮装饰（ui.js 节日检测生成） */
 .fest-deco {
   position: fixed;
