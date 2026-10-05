@@ -1151,8 +1151,11 @@
       renderMenu(e.clientX, e.clientY, { selText: selText, imgEl: imgEl });
     });
 
-    /* 点击菜单外部关闭 */
-    document.addEventListener('click', function () {
+    /* 点击菜单外部关闭（菜单内部的控件/选项不关闭） */
+    document.addEventListener('click', function (e) {
+      if (e.target && e.target.closest && e.target.closest('.ctx-menu')) {
+        return;
+      }
       closeMenu();
     });
     /* Esc 关闭 */
