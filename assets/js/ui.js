@@ -500,6 +500,7 @@
     layer.className = 'click-text-layer';
     layer.setAttribute('aria-hidden', 'true');
     document.body.appendChild(layer);
+    window.__fxHandlers = window.__fxHandlers || {};
 
     var seq = 0;
     var spawn = function (x, y) {
