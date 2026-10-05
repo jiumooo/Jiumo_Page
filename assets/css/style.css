@@ -2010,6 +2010,45 @@ body:has(.login-shell)::before {
   pointer-events: none;
 }
 
+/* 鼠标点击文字特效（ui.js initMouseClick 动态创建）
+ * mode-click：点击位置弹出上浮消散
+ * mode-trail：跟随鼠标移动轨迹拖尾 */
+.click-text-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  pointer-events: none;
+  overflow: hidden;
+}
+.click-text {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  font-weight: 600;
+  white-space: nowrap;
+  user-select: none;
+  pointer-events: none;
+  opacity: 0;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.28);
+}
+.click-text.mode-click {
+  animation: click-text-float 1.5s ease-out forwards;
+}
+.click-text.mode-trail {
+  animation: click-text-trail 2.3s ease-out forwards;
+}
+@keyframes click-text-float {
+  0%   { opacity: 0; transform: translate(-50%, -60%) scale(0.6); }
+  12%  { opacity: 1; transform: translate(-50%, -100%) scale(1.15); }
+  28%  { transform: translate(-50%, -100%) scale(1); }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-100% + var(--dy))) scale(1); }
+}
+@keyframes click-text-trail {
+  0%   { opacity: 0; transform: translate(-50%, -100%) scale(0.5); }
+  15%  { opacity: 1; transform: translate(-50%, -100%) scale(1.05); }
+  70%  { opacity: 0.9; }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--dx) * 0.4), calc(-100% + var(--dy))) scale(1); }
+}
+
 /* 节日主题漂浮装饰（ui.js 节日检测生成） */
 .fest-deco {
   position: fixed;

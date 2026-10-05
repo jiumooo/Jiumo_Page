@@ -979,6 +979,11 @@
     d.widgets.mouseTrail = checked('cfgWMouseTrail');
     d.widgets.mouseTrailLife = val('cfgWMouseTrailLife') || 'long';
     d.widgets.mouseTrailSize = Math.max(1, Math.min(10, parseFloat(val('cfgWMouseTrailSize')) || 3.5));
+    d.widgets.mouseClick = checked('cfgWMouseClick');
+    d.widgets.mouseClickMode = val('cfgWMouseClickMode') || 'click';
+    d.widgets.mouseClickSize = Math.max(10, Math.min(40, parseInt(val('cfgWMouseClickSize'), 10) || 18));
+    d.widgets.mouseClickTexts = (val('cfgWMouseClickTexts') || '富强 民主 文明 和谐 自由 平等 公正 法治 爱国 敬业 诚信 友善').trim();
+    d.widgets.mouseClickColor = val('cfgWMouseClickColor') || '#0f766e';
     d.widgets.festivalTheme = checked('cfgWFestival');
     d.widgets.festivalDecoCount = Math.max(0, Math.min(20, parseInt(val('cfgWFestivalDecoCount'), 10) || 8));
     d.widgets.festivalDecoOpacity = Math.max(0.1, Math.min(1, parseFloat(val('cfgWFestivalDecoOpacity')) || 0.9));
@@ -1042,6 +1047,11 @@
     setVal('cfgWMouseTrail', w.mouseTrail !== false);
     setVal('cfgWMouseTrailLife', w.mouseTrailLife || 'long');
     setVal('cfgWMouseTrailSize', w.mouseTrailSize != null ? w.mouseTrailSize : 3.5);
+    setVal('cfgWMouseClick', w.mouseClick !== false);
+    setVal('cfgWMouseClickMode', w.mouseClickMode || 'click');
+    setVal('cfgWMouseClickSize', w.mouseClickSize != null ? w.mouseClickSize : 18);
+    setVal('cfgWMouseClickTexts', w.mouseClickTexts || '富强 民主 文明 和谐 自由 平等 公正 法治 爱国 敬业 诚信 友善');
+    setVal('cfgWMouseClickColor', w.mouseClickColor || '#0f766e');
     setVal('cfgWFestival', w.festivalTheme !== false);
     setVal('cfgWFestivalDecoCount', w.festivalDecoCount != null ? w.festivalDecoCount : 8);
     setVal('cfgWFestivalDecoOpacity', w.festivalDecoOpacity != null ? w.festivalDecoOpacity : 0.9);
@@ -1129,6 +1139,9 @@
     'cfgWTyping': '动画管理', 'cfgWThemeAnim': '动画管理',
     'cfgWProgressBar': '动画管理', 'cfgWMouseTrail': '动画管理',
     'cfgWMouseTrailLife': '动画管理', 'cfgWMouseTrailSize': '动画管理',
+    'cfgWMouseClick': '动画管理', 'cfgWMouseClickMode': '动画管理',
+    'cfgWMouseClickSize': '动画管理', 'cfgWMouseClickTexts': '动画管理',
+    'cfgWMouseClickColor': '动画管理',
     'cfgWFestival': '动画管理',
     'cfgWFestivalDecoCount': '动画管理', 'cfgWFestivalDecoOpacity': '动画管理',
     'cfgWFestivalDecoContent': '动画管理'

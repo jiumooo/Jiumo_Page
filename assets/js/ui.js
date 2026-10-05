@@ -462,6 +462,85 @@
   }
 
   /* ----------------------------------------------------------
+   * 鼠标点击特效：点击页面弹出文字上浮消散（click 模式）
+   * 或文字跟随鼠标拖尾（trail 模式）
+   * 后台「动画管理 → 鼠标交互」可开关，并设置模式/文字/大小/颜色
+   * 触屏设备自动跳过
+   * -------------------------------------------------------- */
+  function initMouseClick() {
+    if (document.querySelector('.admin-nav')) {
+      return;
+    }
+    var w = SITE_CFG.widgets || {};
+    if (!w.mouseClick || !window.matchMedia('(pointer: fine)').matches) {
+      return;
+    }
+    var mode = w.mouseClickMode || 'click';
+    var size = Math.max(10, Math.min(40, parseInt(w.mouseClickSize, 10) || 18));
+    var color = w.mouseClickColor || '#0f766e';
+    var texts = String(w.mouseClickTexts ||
+      '富强 民主 文明 和谐 自由 平等 公正 法治 爱国 敬业 诚信 友善')
+      .split(/[\s,，、]+/).map(function (t) { return t.trim(); }).filter(Boolean);
+    if (!texts.length) {
+      texts = ['富强', '民主', '文明', '和谐'];
+    }
+
+    var layer = document.createElement('div');
+    layer.className = 'click-text-layer';
+    layer.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(layer);
+
+    var seq = 0;
+    var spawn = function (x, y) {
+      /* 上限保护：超过 60 个时移除最早的文字 */
+      if (layer.children.length > 60) {
+        layer.removeChild(layer.firstChild);
+      }
+      var el = document.createElement('span');
+      el.className = 'click-text';
+      el.textContent = texts[Math.floor(Math.random() * texts.length)];
+      el.style.left = x + 'px';
+      el.style.top = y + 'px';
+      el.style.fontSize = size + 'px';
+      el.style.color = color;
+      el.style.setProperty('--dx', (Math.random() * 64 - 32).toFixed(0) + 'px');
+      el.style.setProperty('--dy', (-42 - Math.random() * 52).toFixed(0) + 'px');
+      el.classList.add(mode === 'click' ? 'mode-click' : 'mode-trail');
+      layer.appendChild(el);
+      var t = seq * 24;
+      seq++;
+      setTimeout(function () {
+        if (el.parentNode) {
+          el.parentNode.removeChild(el);
+        }
+      }, (mode === 'click' ? 1500 : 2300) + t);
+    };
+
+    if (mode === 'click') {
+      /* 点击动作：点击位置弹出文字，随机漂移上浮消散 */
+      document.addEventListener('click', function (e) {
+        spawn(e.clientX, e.clientY);
+      }, { passive: true });
+    } else {
+      /* 拖尾：鼠标移动每 36px 留下一个文字，跟随移动轨迹 */
+      var lastX = null;
+      var lastY = null;
+      var dist = 0;
+      document.addEventListener('mousemove', function (e) {
+        if (lastX != null) {
+          dist += Math.hypot(e.clientX - lastX, e.clientY - lastY);
+        }
+        lastX = e.clientX;
+        lastY = e.clientY;
+        if (dist >= 36) {
+          dist = 0;
+          spawn(e.clientX, e.clientY);
+        }
+      }, { passive: true });
+    }
+  }
+
+  /* ----------------------------------------------------------
    * 节日主题自动切换：当天是节日时自动换主色调 + 顶部漂浮装饰
    * 后台「动画管理」可开关；平时不打扰
    * -------------------------------------------------------- */
@@ -564,6 +643,7 @@
     /* 欢迎语打字机已统一由 config.js 全局队列处理（随机延迟、依次打字），不再使用 Typed.js */
     initProgressBar();
     initMouseTrail();
+    initMouseClick();
     initFestivalTheme();
   };
 })();

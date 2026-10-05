@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>管理后台 - Jiumo_Page</title>
-  <link rel="stylesheet" href="../assets/css/style.css?v=37">
+  <link rel="stylesheet" href="../assets/css/style.css?v=38">
 </head>
 <body>
 
@@ -76,7 +76,7 @@
         </div>
         <div class="actions">
           <button class="btn btn-primary" id="btnApplyAll">应用所有设置<span class="apply-badge">!</span></button>
-          <a class="btn btn-ghost" href="../index.html">博客首页</a>
+          <a class="btn btn-ghost" href="../index.html">回到主页面</a>
           <button class="btn btn-danger" id="btnLogoutTop">登出</button>
         </div>
       </div>
@@ -442,8 +442,13 @@
         </div>
         <div class="panel">
           <h2>鼠标交互</h2>
-          <div class="form-row">
-            <label><input type="checkbox" id="cfgWMouseTrail"> 启用鼠标轨迹<span class="hint">鼠标移动时带出主色流光粒子拖尾</span></label>
+          <div class="form-grid">
+            <div class="form-row">
+              <label><input type="checkbox" id="cfgWMouseTrail"> 启用鼠标轨迹<span class="hint">鼠标移动时带出主色流光粒子拖尾</span></label>
+            </div>
+            <div class="form-row">
+              <label><input type="checkbox" id="cfgWMouseClick"> 启用鼠标点击特效<span class="hint">点击页面时显示文字特效</span></label>
+            </div>
           </div>
           <div class="form-grid">
             <div class="form-row">
@@ -458,6 +463,27 @@
             <div class="form-row">
               <label>粒子大小</label>
               <input type="number" id="cfgWMouseTrailSize" min="1" max="10" step="0.5" value="3.5">
+            </div>
+            <div class="form-row">
+              <label>点击特效模式</label>
+              <select id="cfgWMouseClickMode">
+                <option value="click">点击动作（点击位置弹出文字上浮消散）</option>
+                <option value="trail">拖尾（文字跟随鼠标移动拖尾）</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label>文字大小</label>
+              <input type="number" id="cfgWMouseClickSize" min="10" max="40" step="1" value="18">
+            </div>
+          </div>
+          <div class="form-grid">
+            <div class="form-row">
+              <label>点击文字内容<span class="hint">多个文字用空格或逗号分隔，每次随机显示一个</span></label>
+              <textarea id="cfgWMouseClickTexts" rows="2">富强 民主 文明 和谐 自由 平等 公正 法治 爱国 敬业 诚信 友善</textarea>
+            </div>
+            <div class="form-row">
+              <label>文字颜色</label>
+              <input type="color" id="cfgWMouseClickColor" value="#0f766e">
             </div>
           </div>
         </div>
@@ -510,17 +536,17 @@
     <button class="corner-btn" id="btnDark" title="切换深浅色" aria-label="切换深浅色">☾</button>
   </div>
 
-  <script src="../assets/js/config.js?v=37"></script>
-  <script src="../assets/vendor/marked.min.js?v=37"></script>
-  <script src="../assets/js/ui.js?v=37"></script>
-  <script src="../assets/js/reader.js?v=37"></script>
+  <script src="../assets/js/config.js?v=38"></script>
+  <script src="../assets/vendor/marked.min.js?v=38"></script>
+  <script src="../assets/js/ui.js?v=38"></script>
+  <script src="../assets/js/reader.js?v=38"></script>
   <!-- 侧栏模块（独立文件夹 modules/，注册到 window.JiumoModules） -->
-  <script src="../modules/datetime/module.js?v=37"></script>
-  <script src="../modules/weather/module.js?v=37"></script>
-  <script src="../modules/ghchart/module.js?v=37"></script>
-  <script src="../modules/quotes/module.js?v=37"></script>
-  <script src="../modules/stats/module.js?v=37"></script>
-  <script src="../assets/js/admin.js?v=37"></script>
+  <script src="../modules/datetime/module.js?v=38"></script>
+  <script src="../modules/weather/module.js?v=38"></script>
+  <script src="../modules/ghchart/module.js?v=38"></script>
+  <script src="../modules/quotes/module.js?v=38"></script>
+  <script src="../modules/stats/module.js?v=38"></script>
+  <script src="../assets/js/admin.js?v=38"></script>
 </body>
 </html>
 
