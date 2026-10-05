@@ -106,7 +106,14 @@ window.DEFAULT_SITE_CONFIG = {
       particles: true,         /* 一键开关粒子背景 */
       mouseTrail: true,        /* 一键开关鼠标轨迹 */
       clickFx: true,           /* 一键开关点击特效 */
-      typing: true             /* 一键开关打字机 */
+      typing: true,            /* 一键开关打字机 */
+      copySel: true,           /* 复制选中文字（选中文字时显示） */
+      copyMd: true,            /* 复制 Markdown 原文（文章页） */
+      toc: true,               /* 文章目录（文章页） */
+      stats: true,             /* 文章统计（文章页） */
+      nav: true,               /* 上一篇/下一篇（文章页） */
+      copyImg: true,           /* 复制图片（右键点在图片上） */
+      openImg: true            /* 新窗口打开原图（右键点在图片上） */
     },
     festivalTheme: true,       /* 节日主题自动切换 */
     festivalDecoCount: 8,      /* 节日装饰数量 0-20 */

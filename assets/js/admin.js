@@ -995,7 +995,14 @@
       particles: checked('cfgWCMParticles'),
       mouseTrail: checked('cfgWCMMouseTrail'),
       clickFx: checked('cfgWCMClickFx'),
-      typing: checked('cfgWCMTyping')
+      typing: checked('cfgWCMTyping'),
+      copySel: checked('cfgWCMCopySel'),
+      copyMd: checked('cfgWCMCopyMd'),
+      toc: checked('cfgWCMToc'),
+      stats: checked('cfgWCMStats'),
+      nav: checked('cfgWCMNav'),
+      copyImg: checked('cfgWCMCopyImg'),
+      openImg: checked('cfgWCMOpenImg')
     };
     d.widgets.festivalTheme = checked('cfgWFestival');
     d.widgets.festivalDecoCount = Math.max(0, Math.min(20, parseInt(val('cfgWFestivalDecoCount'), 10) || 8));
@@ -1077,6 +1084,13 @@
     setVal('cfgWCMMouseTrail', cmi.mouseTrail !== false);
     setVal('cfgWCMClickFx', cmi.clickFx !== false);
     setVal('cfgWCMTyping', cmi.typing !== false);
+    setVal('cfgWCMCopySel', cmi.copySel !== false);
+    setVal('cfgWCMCopyMd', cmi.copyMd !== false);
+    setVal('cfgWCMToc', cmi.toc !== false);
+    setVal('cfgWCMStats', cmi.stats !== false);
+    setVal('cfgWCMNav', cmi.nav !== false);
+    setVal('cfgWCMCopyImg', cmi.copyImg !== false);
+    setVal('cfgWCMOpenImg', cmi.openImg !== false);
     setVal('cfgWFestival', w.festivalTheme !== false);
     setVal('cfgWFestivalDecoCount', w.festivalDecoCount != null ? w.festivalDecoCount : 8);
     setVal('cfgWFestivalDecoOpacity', w.festivalDecoOpacity != null ? w.festivalDecoOpacity : 0.9);
@@ -1172,7 +1186,10 @@
     'cfgWCMFullscreen': '动画管理', 'cfgWCMRefresh': '动画管理',
     'cfgWCMAdmin': '动画管理', 'cfgWCMParticles': '动画管理',
     'cfgWCMMouseTrail': '动画管理', 'cfgWCMClickFx': '动画管理',
-    'cfgWCMTyping': '动画管理',
+    'cfgWCMTyping': '动画管理', 'cfgWCMCopySel': '动画管理',
+    'cfgWCMCopyMd': '动画管理', 'cfgWCMToc': '动画管理',
+    'cfgWCMStats': '动画管理', 'cfgWCMNav': '动画管理',
+    'cfgWCMCopyImg': '动画管理', 'cfgWCMOpenImg': '动画管理',
     'cfgWFestival': '动画管理',
     'cfgWFestivalDecoCount': '动画管理', 'cfgWFestivalDecoOpacity': '动画管理',
     'cfgWFestivalDecoContent': '动画管理'

@@ -578,6 +578,13 @@
       return;
     }
     var items = w.contextMenuItems || {};
+    /* 文章页识别：文章正文容器存在 或 URL 含 post.html */
+    var isPost = !!document.querySelector('.post-article') ||
+      location.pathname.indexOf('post.html') > -1;
+    var postFile = '';
+    try {
+      postFile = new URLSearchParams(location.search).get('f') || '';
+    } catch (err) {}
     var menu = document.createElement('div');
     menu.className = 'ctx-menu';
     menu.style.display = 'none';
@@ -586,6 +593,22 @@
     function closeMenu() {
       menu.style.display = 'none';
       menu.innerHTML = '';
+    }
+
+    /* 复制文字（Clipboard API 优先，兼容降级） */
+    function copyText(text) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        return navigator.clipboard.writeText(text);
+      }
+      return new Promise(function (resolve) {
+        var ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); } catch (err) {}
+        ta.remove();
+        resolve();
+      });
     }
 
     /* 模块开关状态文字（实时显示开/关） */
@@ -665,8 +688,9 @@
       }
     }
 
-    /* 构建菜单（按后台开关渲染对应项） */
-    function renderMenu(x, y) {
+    /* 构建菜单（按后台开关渲染对应项；opts 携带上下文：选中文字/图片元素） */
+    function renderMenu(x, y, opts) {
+      opts = opts || {};
       menu.innerHTML = '';
       function addItem(id, label, fn, keepOpen) {
         if (items[id] === false) {
@@ -677,7 +701,7 @@
         el.textContent = label;
         el.addEventListener('click', function (ev) {
           ev.stopPropagation();
-          fn();
+          fn(el);
           if (!keepOpen) {
             closeMenu();
           }
@@ -691,6 +715,37 @@
         menu.appendChild(s);
       }
 
+      /* 图片专属（右键点在图片上时）：复制图片 / 新窗口打开原图 */
+      if (opts.imgEl) {
+        addItem('copyImg', '复制图片', function (el) {
+          el.textContent = '复制中…';
+          fetch(opts.imgEl.src).then(function (r) {
+            return r.blob();
+          }).then(function (blob) {
+            return navigator.clipboard.write([
+              new ClipboardItem({ 'image/png': blob })
+            ]);
+          }).then(function () {
+            el.textContent = '已复制 ✓';
+            setTimeout(closeMenu, 700);
+          }).catch(function () {
+            el.textContent = '跨域无法复制，请打开原图后复制';
+            setTimeout(closeMenu, 1400);
+          });
+        }, true);
+        addItem('openImg', '新窗口打开原图', function () {
+          window.open(opts.imgEl.src, '_blank', 'noopener');
+        });
+        addSep();
+      }
+
+      /* 选中文字时：复制选中文字 */
+      if (opts.selText) {
+        addItem('copySel', '复制选中文字', function () {
+          copyText(opts.selText);
+        });
+      }
+
       addItem('backTop', '回到顶部', function () {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       });
@@ -701,18 +756,45 @@
         applyTheme(next);
       });
       addItem('copyLink', '复制当前链接', function () {
-        var url = location.href;
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(url);
-        } else {
-          var ta = document.createElement('textarea');
-          ta.value = url;
-          document.body.appendChild(ta);
-          ta.select();
-          try { document.execCommand('copy'); } catch (err) {}
-          ta.remove();
-        }
+        copyText(location.href);
       });
+
+      /* 文章页专属：目录 / 复制原文 / 统计 / 上一篇下一篇 */
+      if (isPost) {
+        var postShown = false;
+        var postDefs = [
+          ['toc', '文章目录', function () { renderSub('toc'); }, true],
+          ['copyMd', '复制 Markdown 原文', function (el) {
+            if (!postFile) {
+              el.textContent = '缺少文章参数';
+              setTimeout(closeMenu, 1000);
+              return;
+            }
+            el.textContent = '正在获取…';
+            getPostRaw(postFile).then(function (raw) {
+              return copyText(raw);
+            }).then(function () {
+              el.textContent = '已复制 ✓';
+              setTimeout(closeMenu, 700);
+            }).catch(function () {
+              el.textContent = '获取失败';
+              setTimeout(closeMenu, 1000);
+            });
+          }, true],
+          ['stats', '文章统计', function () { renderSub('stats'); }, true],
+          ['nav', '上一篇', function (el) { goAdjacent(-1, el); }, true],
+          ['nav', '下一篇', function (el) { goAdjacent(1, el); }, true]
+        ];
+        postDefs.forEach(function (d) {
+          if (items[d[0]] !== false) {
+            if (!postShown) {
+              addSep();
+              postShown = true;
+            }
+            addItem(d[0], d[1], d[2], d[3]);
+          }
+        });
+      }
 
       var fxShown = false;
       var fxDefs = [
@@ -753,7 +835,11 @@
         }
       });
 
-      /* 显示并做边缘自适应（防止超出视口） */
+      showMenu(x, y);
+    }
+
+    /* 显示菜单并做边缘自适应（防止超出视口） */
+    function showMenu(x, y) {
       menu.style.display = 'block';
       var mw = menu.offsetWidth;
       var mh = menu.offsetHeight;
@@ -765,7 +851,119 @@
       menu.style.top = top + 'px';
     }
 
-    /* 右键打开菜单（阻止浏览器默认菜单） */
+    /* 子面板：文章目录 / 文章统计（点击菜单项后内容切换，带返回） */
+    function renderSub(kind) {
+      menu.innerHTML = '';
+      var back = document.createElement('div');
+      back.className = 'ctx-item ctx-back';
+      back.textContent = '← 返回主菜单';
+      back.addEventListener('click', function (ev) {
+        ev.stopPropagation();
+        renderMenu(menu.lastX, menu.lastY);
+      });
+      menu.appendChild(back);
+      var sep = document.createElement('div');
+      sep.className = 'ctx-sep';
+      menu.appendChild(sep);
+
+      if (kind === 'toc') {
+        /* 从已渲染正文提取 h2/h3 标题 */
+        var heads = document.querySelectorAll('.post-article h2, .post-article h3');
+        if (!heads.length) {
+          var none = document.createElement('div');
+          none.className = 'ctx-item ctx-disabled';
+          none.textContent = '本文没有小标题';
+          menu.appendChild(none);
+        } else {
+          var n = 0;
+          heads.forEach(function (h) {
+            if (n >= 15) { return; }
+            var el = document.createElement('div');
+            el.className = 'ctx-item' + (h.tagName === 'H3' ? ' ctx-item-sub' : '');
+            el.textContent = (h.tagName === 'H3' ? '　↳ ' : '') +
+              (h.textContent.replace(/\s+/g, ' ').trim().slice(0, 24));
+            el.addEventListener('click', function (ev) {
+              ev.stopPropagation();
+              closeMenu();
+              h.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
+            menu.appendChild(el);
+            n++;
+          });
+          if (n > 15) {
+            var more = document.createElement('div');
+            more.className = 'ctx-item ctx-disabled';
+            more.textContent = '…仅显示前 15 个标题';
+            menu.appendChild(more);
+          }
+        }
+      } else if (kind === 'stats') {
+        /* 从正文 DOM 直接统计 */
+        var art = document.querySelector('.post-article');
+        var text = art ? (art.textContent || '') : '';
+        var chars = text.replace(/\s+/g, '').length;
+        var minutes = Math.max(1, Math.round(chars / 400));
+        var rows = [
+          ['正文字数', chars + ' 字'],
+          ['预计阅读', '约 ' + minutes + ' 分钟'],
+          ['代码块', (art ? art.querySelectorAll('pre').length : 0) + ' 个'],
+          ['表格', (art ? art.querySelectorAll('table').length : 0) + ' 张'],
+          ['图片', (art ? art.querySelectorAll('img').length : 0) + ' 张'],
+          ['小标题', (art ? art.querySelectorAll('h2, h3').length : 0) + ' 个']
+        ];
+        rows.forEach(function (r) {
+          var el = document.createElement('div');
+          el.className = 'ctx-item ctx-stats';
+          el.innerHTML = '<span class="ctx-stats-k">' + r[0] +
+            '</span><span class="ctx-stats-v">' + r[1] + '</span>';
+          menu.appendChild(el);
+        });
+      }
+      showMenu(menu.lastX, menu.lastY);
+    }
+
+    /* 上一篇 / 下一篇：拉取发布列表定位当前文章（与首页同排序） */
+    function goAdjacent(dir, el) {
+      if (!postFile) {
+        el.textContent = '缺少文章参数';
+        return;
+      }
+      el.textContent = dir < 0 ? '正在查找上一篇…' : '正在查找下一篇…';
+      listPostFiles().then(function (files) {
+        return Promise.all(files.map(function (f) {
+          return getPostRaw(f.name).then(function (raw) {
+            return { name: f.name, meta: parseFrontMatter(raw) };
+          }).catch(function () { return null; });
+        }));
+      }).then(function (posts) {
+        var list = posts.filter(Boolean).filter(function (p) {
+          return !(p.meta.draft === 'true' || p.meta.draft === true);
+        }).sort(function (a, b) {
+          var da = a.meta.date || a.name;
+          var db = b.meta.date || b.name;
+          return da < db ? 1 : da > db ? -1 : 0;
+        });
+        var idx = -1;
+        for (var i = 0; i < list.length; i++) {
+          if (list[i].name === postFile) {
+            idx = i;
+            break;
+          }
+        }
+        var target = idx < 0 ? null : list[idx + dir];
+        if (!target) {
+          el.textContent = dir < 0 ? '已经是第一篇' : '已经是最后一篇';
+          setTimeout(closeMenu, 900);
+          return;
+        }
+        location.href = 'post.html?f=' + encodeURIComponent(target.name);
+      }).catch(function () {
+        el.textContent = '获取列表失败';
+        setTimeout(closeMenu, 1000);
+      });
+    }
+
+    /* 右键打开菜单（阻止浏览器默认菜单；携带选中文字/图片上下文） */
     document.addEventListener('contextmenu', function (e) {
       if (e.target && e.target.closest && e.target.closest('.ctx-menu')) {
         closeMenu();
@@ -774,7 +972,12 @@
       e.preventDefault();
       menu.lastX = e.clientX;
       menu.lastY = e.clientY;
-      renderMenu(e.clientX, e.clientY);
+      var selText = '';
+      try {
+        selText = window.getSelection() ? window.getSelection().toString().trim() : '';
+      } catch (err) {}
+      var imgEl = (e.target && e.target.closest) ? e.target.closest('img') : null;
+      renderMenu(e.clientX, e.clientY, { selText: selText, imgEl: imgEl });
     });
 
     /* 点击菜单外部关闭 */
