@@ -2115,6 +2115,53 @@ body:has(.login-shell)::before {
   margin: 5px 8px;
   background: var(--border);
 }
+.ctx-panel-title {
+  padding: 6px 12px 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 4px;
+}
+.ctx-panel-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 6px 12px;
+  font-size: 13px;
+}
+.ctx-panel-label {
+  color: var(--text);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.ctx-ctrl {
+  width: 128px;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 12px;
+  outline: none;
+}
+.ctx-ctrl:focus {
+  border-color: var(--accent);
+}
+.ctx-ctrl.ctx-color {
+  width: 44px;
+  height: 26px;
+  padding: 1px;
+  cursor: pointer;
+}
+.ctx-ctrl.ctx-check {
+  width: auto;
+  accent-color: var(--accent);
+}
+.ctx-ctrl.ctx-txtarea {
+  width: 168px;
+}
 
 /* 节日主题漂浮装饰（ui.js 节日检测生成） */
 .fest-deco {

@@ -617,23 +617,29 @@
       return label + '：' + (on ? '开' : '关');
     }
 
+    /* 按配置重建对应特效（粒子/轨迹/点击特效），即时生效 */
+    function rebuildFx(key) {
+      var cfg = SITE_CFG.widgets;
+      if (key === 'particles') {
+        var old = document.getElementById('particles-bg');
+        if (old) { old.remove(); }
+        if (cfg.particles !== false) { initParticles(); }
+      } else if (key === 'mouseTrail') {
+        var t = window.__fxHandlers && window.__fxHandlers.mouseTrail;
+        if (t) { window.removeEventListener('mousemove', t.handler); t.clear(); delete window.__fxHandlers.mouseTrail; }
+        if (cfg.mouseTrail !== false) { initMouseTrail(); }
+      } else if (key === 'mouseClick') {
+        var c = window.__fxHandlers && window.__fxHandlers.mouseClick;
+        if (c) { document.removeEventListener(c.type, c.handler); c.clear(); delete window.__fxHandlers.mouseClick; }
+        if (cfg.mouseClick !== false) { initMouseClick(); }
+      }
+    }
+
     /* 切换模块开关并即时生效（粒子/轨迹/点击特效/打字机） */
     function toggleFx(key) {
       var cfg = SITE_CFG.widgets;
       cfg[key] = !(cfg[key] !== false);
-      if (key === 'particles') {
-        var old = document.getElementById('particles-bg');
-        if (old) { old.remove(); }
-        if (cfg.particles) { initParticles(); }
-      } else if (key === 'mouseTrail') {
-        var t = window.__fxHandlers && window.__fxHandlers.mouseTrail;
-        if (t) { window.removeEventListener('mousemove', t.handler); t.clear(); delete window.__fxHandlers.mouseTrail; }
-        if (cfg.mouseTrail) { initMouseTrail(); }
-      } else if (key === 'mouseClick') {
-        var c = window.__fxHandlers && window.__fxHandlers.mouseClick;
-        if (c) { document.removeEventListener(c.type, c.handler); c.clear(); delete window.__fxHandlers.mouseClick; }
-        if (cfg.mouseClick) { initMouseClick(); }
-      } else if (key === 'typing') {
+      if (key === 'typing') {
         if (!cfg.typing) {
           clearTypewriters();
           /* 关闭后直接显示完整文字，避免区域空白 */
@@ -648,6 +654,8 @@
         } else {
           restartTypewriters();
         }
+      } else {
+        rebuildFx(key);
       }
       renderMenu(menu.lastX, menu.lastY);
     }
@@ -798,10 +806,10 @@
 
       var fxShown = false;
       var fxDefs = [
-        ['particles', fxLabel('particles', '粒子背景'), 'particles'],
-        ['mouseTrail', fxLabel('mouseTrail', '鼠标轨迹'), 'mouseTrail'],
-        ['clickFx', fxLabel('mouseClick', '点击特效'), 'mouseClick'],
-        ['typing', fxLabel('typing', '打字机'), 'typing']
+        ['particles', fxLabel('particles', '粒子背景') + ' ›', 'fx-particles'],
+        ['mouseTrail', fxLabel('mouseTrail', '鼠标轨迹') + ' ›', 'fx-trail'],
+        ['clickFx', fxLabel('mouseClick', '点击特效') + ' ›', 'fx-click'],
+        ['typing', fxLabel('typing', '打字机') + ' ›', 'fx-typing']
       ];
       fxDefs.forEach(function (d) {
         if (items[d[0]] !== false) {
@@ -809,7 +817,7 @@
             addSep();
             fxShown = true;
           }
-          addItem(d[0], d[1], function () { toggleFx(d[2]); }, true);
+          addItem(d[0], d[1], function () { renderSub(d[2]); }, true);
         }
       });
 
@@ -918,6 +926,169 @@
             '</span><span class="ctx-stats-v">' + r[1] + '</span>';
           menu.appendChild(el);
         });
+      } else if (kind === 'fx-particles' || kind === 'fx-trail' ||
+                 kind === 'fx-click' || kind === 'fx-typing') {
+        /* 特效实时设置面板：改参数立即重建对应特效，方便看效果 */
+        var cfg = SITE_CFG.widgets;
+
+        /* 面板控件构造器 */
+        function panelRow(label, ctrl) {
+          var row = document.createElement('div');
+          row.className = 'ctx-panel-row';
+          var lb = document.createElement('span');
+          lb.className = 'ctx-panel-label';
+          lb.textContent = label;
+          row.appendChild(lb);
+          row.appendChild(ctrl);
+          menu.appendChild(row);
+        }
+        function makeSelect(opts, cur, fn) {
+          var s = document.createElement('select');
+          s.className = 'ctx-ctrl';
+          opts.forEach(function (o) {
+            var op = document.createElement('option');
+            op.value = o[0];
+            op.textContent = o[1];
+            if (String(o[0]) === String(cur)) { op.selected = true; }
+            s.appendChild(op);
+          });
+          s.addEventListener('change', fn);
+          return s;
+        }
+        function makeNumber(min, max, step, cur, fn) {
+          var i = document.createElement('input');
+          i.type = 'number';
+          i.className = 'ctx-ctrl';
+          i.min = String(min);
+          i.max = String(max);
+          i.step = String(step);
+          i.value = String(cur);
+          i.addEventListener('input', fn);
+          return i;
+        }
+        function makeColor(cur, fn) {
+          var i = document.createElement('input');
+          i.type = 'color';
+          i.className = 'ctx-ctrl ctx-color';
+          i.value = cur || '#0f766e';
+          i.addEventListener('input', fn);
+          return i;
+        }
+        function makeText(cur, fn) {
+          var i = document.createElement('input');
+          i.type = 'text';
+          i.className = 'ctx-ctrl';
+          i.value = cur || '';
+          i.addEventListener('change', fn);
+          return i;
+        }
+        function makeCheck(cur, fn) {
+          var i = document.createElement('input');
+          i.type = 'checkbox';
+          i.className = 'ctx-ctrl ctx-check';
+          i.checked = cur;
+          i.addEventListener('change', fn);
+          return i;
+        }
+        function addTitle(text) {
+          var t = document.createElement('div');
+          t.className = 'ctx-panel-title';
+          t.textContent = text;
+          menu.appendChild(t);
+        }
+
+        if (kind === 'fx-particles') {
+          addTitle('粒子背景');
+          panelRow('启用', makeCheck(cfg.particles !== false, function (e) {
+            cfg.particles = e.target.checked;
+            rebuildFx('particles');
+          }));
+          panelRow('样式', makeSelect([['default', '连线粒子'], ['snow', '雪花飘落']],
+            cfg.particlesPreset || 'default', function (e) {
+              cfg.particlesPreset = e.target.value;
+              rebuildFx('particles');
+            }));
+          panelRow('数量', makeNumber(10, 150, 1, parseInt(cfg.particlesCount, 10) || 60, function (e) {
+            cfg.particlesCount = Math.max(10, Math.min(150, parseInt(e.target.value, 10) || 60));
+            rebuildFx('particles');
+          }));
+          panelRow('透明度', makeNumber(0.1, 1, 0.05, parseFloat(cfg.particlesOpacity) || 0.65, function (e) {
+            cfg.particlesOpacity = Math.max(0.1, Math.min(1, parseFloat(e.target.value) || 0.65));
+            rebuildFx('particles');
+          }));
+          panelRow('颜色', makeColor(cfg.particlesColor && cfg.particlesColor !== 'auto' ? cfg.particlesColor : '#0f766e', function (e) {
+            cfg.particlesColor = e.target.value;
+            rebuildFx('particles');
+          }));
+        } else if (kind === 'fx-trail') {
+          addTitle('鼠标轨迹');
+          panelRow('启用', makeCheck(cfg.mouseTrail !== false, function (e) {
+            cfg.mouseTrail = e.target.checked;
+            rebuildFx('mouseTrail');
+          }));
+          panelRow('拖尾时长', makeSelect(
+            [['short', '短（约1秒）'], ['mid', '中（约2秒）'], ['long', '长（约3秒）'], ['forever', '持续常驻']],
+            cfg.mouseTrailLife || 'long', function (e) {
+              cfg.mouseTrailLife = e.target.value;
+              rebuildFx('mouseTrail');
+            }));
+          panelRow('粒子大小', makeNumber(1, 10, 0.5, parseFloat(cfg.mouseTrailSize) || 3.5, function (e) {
+            cfg.mouseTrailSize = Math.max(1, Math.min(10, parseFloat(e.target.value) || 3.5));
+            rebuildFx('mouseTrail');
+          }));
+        } else if (kind === 'fx-click') {
+          addTitle('点击特效');
+          panelRow('启用', makeCheck(cfg.mouseClick !== false, function (e) {
+            cfg.mouseClick = e.target.checked;
+            rebuildFx('mouseClick');
+          }));
+          panelRow('模式', makeSelect([['click', '点击动作（弹出上浮）'], ['trail', '拖尾（跟随鼠标）']],
+            cfg.mouseClickMode || 'click', function (e) {
+              cfg.mouseClickMode = e.target.value;
+              rebuildFx('mouseClick');
+            }));
+          panelRow('文字大小', makeNumber(10, 40, 1, parseInt(cfg.mouseClickSize, 10) || 18, function (e) {
+            cfg.mouseClickSize = Math.max(10, Math.min(40, parseInt(e.target.value, 10) || 18));
+            rebuildFx('mouseClick');
+          }));
+          panelRow('文字颜色', makeColor(cfg.mouseClickColor || '#0f766e', function (e) {
+            cfg.mouseClickColor = e.target.value;
+            rebuildFx('mouseClick');
+          }));
+          var txt = document.createElement('input');
+          txt.type = 'text';
+          txt.className = 'ctx-ctrl ctx-txtarea';
+          txt.value = cfg.mouseClickTexts || '富强 民主 文明 和谐';
+          txt.placeholder = '多个文字用空格分隔';
+          txt.addEventListener('change', function () {
+            cfg.mouseClickTexts = txt.value.trim();
+            rebuildFx('mouseClick');
+          });
+          panelRow('文字内容', txt);
+        } else if (kind === 'fx-typing') {
+          addTitle('打字机');
+          panelRow('启用', makeCheck(cfg.typing !== false, function (e) {
+            cfg.typing = e.target.checked;
+            toggleFx('typing');
+          }));
+          panelRow('打字速度(ms/字)', makeNumber(20, 300, 10,
+            parseInt(SITE_CFG.profile.introTypingSpeed, 10) || 80, function (e) {
+              var v = Math.max(20, Math.min(300, parseInt(e.target.value, 10) || 80));
+              SITE_CFG.site.descTypingSpeed = v;
+              SITE_CFG.profile.introTypingSpeed = v;
+              restartTypewriters();
+            }));
+          var wt = document.createElement('input');
+          wt.type = 'text';
+          wt.className = 'ctx-ctrl ctx-txtarea';
+          wt.value = (cfg.typingText && cfg.typingText[0]) || '';
+          wt.placeholder = '欢迎语文字';
+          wt.addEventListener('change', function () {
+            cfg.typingText = [wt.value.trim()];
+            restartTypewriters();
+          });
+          panelRow('欢迎语文字', wt);
+        }
       }
       showMenu(menu.lastX, menu.lastY);
     }
