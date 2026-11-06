@@ -13,7 +13,7 @@
 ## 目录结构
 
 ```
-Jiumo_blog/
+Jiumo_Page/
 ├── 404.html                  # 自定义 404 页面
 ├── index.html                # 页面首页
 ├── post.html                 # 文章详情页
